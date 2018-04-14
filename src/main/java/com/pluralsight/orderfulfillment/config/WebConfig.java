@@ -17,7 +17,7 @@ import org.springframework.web.servlet.view.tiles2.TilesView;
  * @author Michael Hoffman, Pluralsight
  */
 @Configuration
-@ComponentScan("com.pluralsight.orderfulfillment")
+//@ComponentScan("com.pluralsight.orderfulfillment")
 @EnableWebMvc
 public class WebConfig extends WebMvcConfigurerAdapter {
 

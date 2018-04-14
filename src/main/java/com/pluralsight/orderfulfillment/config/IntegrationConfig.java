@@ -1,15 +1,16 @@
 package com.pluralsight.orderfulfillment.config;
 
-import org.apache.camel.CamelContext;
+import com.pluralsight.orderfulfillment.order.OrderStatus;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.sql.SqlComponent;
 import org.apache.camel.spring.javaconfig.CamelConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
+import javax.sql.DataSource;
 
 @Configuration
 public class IntegrationConfig extends CamelConfiguration {
@@ -18,28 +19,32 @@ public class IntegrationConfig extends CamelConfiguration {
     private static final String INBOUND_DIRECTORY = "order.fulfillment.center.1.inbound.folder";
 
     @Inject
-    private Environment environment;
+    private DataSource dataSource;
 
     @Inject
-    private CamelContext camelContext;
+    private Environment environment;
 
-    @Override
-    public List<RouteBuilder> routes() {
-        List<RouteBuilder> routeList = new ArrayList<>();
-        routeList.add(new RouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-                from("file://" + environment.getProperty(OUTBOUND_DIRECTORY) + "?noop=false")
-                        .to("file://" + environment.getProperty(INBOUND_DIRECTORY) + "/test");
-            }
-        });
-
-        return routeList;
+    @Bean(name = "sql")
+    public SqlComponent sqlComponent() {
+        SqlComponent sqlComponent = new SqlComponent();
+        sqlComponent.setDataSource(dataSource);
+        System.out.println(sqlComponent);
+        return sqlComponent;
     }
 
-    @PostConstruct
-    public void setup() {
-        camelContext.setTracing(true);
+
+    @Bean
+    public RouteBuilder newWebSiteOrderRoute() {
+        return new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                from("sql:" + "select id from orders.\"order\" where status = '" + OrderStatus.NEW.getCode() + "'" + "?"
+                        + "consumer.onConsume=" + "update orders.\"order\" set status = '" + OrderStatus.PROCESSING.getCode()
+                        + "' where id = :#id")
+                        .to("log:com.pluralsight.orderfulfillemnt.order?level=INFO")
+                        .log(LoggingLevel.INFO, "tried to do something");
+            }
+        };
     }
 
 }
