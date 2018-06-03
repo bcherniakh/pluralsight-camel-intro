@@ -42,7 +42,7 @@ public class IntegrationConfig extends CamelConfiguration {
                         + "consumer.onConsume=" + "update orders.\"order\" set status = '" + OrderStatus.PROCESSING.getCode()
                         + "' where id = :#id")
                         .to("log:com.pluralsight.orderfulfillemnt.order?level=INFO")
-                        .log(LoggingLevel.INFO, "tried to do something");
+                        .log(LoggingLevel.INFO, "Consuming orders from a database");
             }
         };
     }
